@@ -241,15 +241,39 @@ class CPU
             let immed_8 = op & 0x11111111,
                 rotate_imm = (op >> 8),
                 shop = immed_8 >> (2 * rotate_imm), // TODO rotate not shift
-                shco;
-            if (0 == rotate_imm) {
-                shco = this.cpsr & [CPSR.C];
-            } else {
-                shco = shop >> 31;
+                shco = 0 == rotate_imm ? this.cpsr & CPSR.C : shop >> 31;
             }
         } else {
             // register
+            if (0 == op >> 4) {
+                //plain
+                let regid = op & 0b1111,
+                    strReg = MODEMAP[this.mode].regmap[regid],
+                    shop = this[strReg],
+                    shco = this.cpsr & CPSR.C;
+            } else if (0 == (op >> 4) & 0b111) {
+                //lsl
+                let shift_imm = op >> 7,
+                    regid = op & 0b1111,
+                    strReg = MODEMAP[this.mode].regmap[regid],
+                    shop = this[strReg] << shift_imm,
+                    shco;
+
+                if (0 == shift_imm) {
+                    shco = this.cpsr & CPSR.C;
+                else {
+                    shco = (this[strReg] >> (32 - shift_imm)) & 1
+                }
+                let regid = op & 0b1111,
+
+            } else {
+                // combination
+            }
         }
+
+        this.cpsr |= shco?CPSR.C:0;
+        return shop;
+
     }
 
     EOR(i, s, Rn, Rd, op) {
