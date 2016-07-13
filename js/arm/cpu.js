@@ -1,11 +1,68 @@
 const MODES = {
-        0b10000: 'usr',
-        0b10001: 'fiq',
-        0b10010: 'irq',
-        0b10011: 'svc',
-        0b10111: 'abt',
-        0b11011: 'und',
-        0b11111: 'sys'
+        usr: 0b10000,
+        fiq: 0b10001,
+        irq: 0b10010,
+        svc: 0b10011,
+        abt: 0b10111,
+        und: 0b11011,
+        sys: 0b11111
+    },
+    MODEMAP = {
+        0b10000: {
+            name: 'usr',
+            regmap: [
+                'r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7',
+                'r8', 'r9', 'r10', 'r11', 'r12', 'r13', 'r14', 'r15'
+            ]
+        },
+        0b10001: {
+            name: 'fiq',
+            regmap: [
+                'r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7',
+                'r8_fiq', 'r9_fiq', 'r10_fiq', 'r11_fiq', 'r12_fiq',
+                'r13_fiq', 'r14_fiq', 'r15'
+            ]
+        },
+        0b10010: {
+            name: 'irq',
+            regmap: [
+                'r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7',
+                'r8', 'r9', 'r10', 'r11', 'r12',
+                'r13_irq', 'r14_irq', 'r15'
+            ]
+        },
+        0b10011: {
+            name: 'svc',
+            regmap: [
+                'r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7',
+                'r8', 'r9', 'r10', 'r11', 'r12',
+                'r13_svc', 'r14_svc', 'r15'
+            ]
+        },
+        0b10111: {
+            name: 'abt',
+            regmap: [
+                'r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7',
+                'r8', 'r9', 'r10', 'r11', 'r12',
+                'r13_abt', 'r14_abt', 'r15'
+            ]
+        },
+        0b11011: {
+            name: 'und',
+            regmap: [
+                'r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7',
+                'r8', 'r9', 'r10', 'r11', 'r12',
+                'r13_und', 'r14_und', 'r15'
+            ]
+        },
+        0b11111: {
+            name: 'sys',
+            regmap: [
+                'r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7',
+                'r8', 'r9', 'r10', 'r11', 'r12',
+                'r13', 'r14', 'r15'
+            ]
+        }
     },
     DATA = [
         'AND',
@@ -81,6 +138,7 @@ const MODES = {
 class CPU
 {
     constructor() {
+        this.mode = MODES.usr;
         this.regs = new Uint32Array(37);
         this.views = new Map();
 
@@ -177,12 +235,40 @@ class CPU
         return this.cpsr & CPSR.Z;
     }
 
+    barrelShift(i, op) {
+        if (i) {
+            // immediate
+            let immed_8 = op & 0x11111111,
+                rotate_imm = (op >> 8),
+                shop = immed_8 >> (2 * rotate_imm), // TODO rotate not shift
+                shco;
+            if (0 == rotate_imm) {
+                shco = this.cpsr & [CPSR.C];
+            } else {
+                shco = shop >> 31;
+            }
+        } else {
+            // register
+        }
+    }
+
     EOR(i, s, Rn, Rd, op) {
         debug('EOR i='+i+' s='+s+' Rn='+Rn.toString(2)+' Rd='+Rd.toString(2)+' op='+op.toString(2));
+
+        let op2 = barrelShift(i, op);
+
+        let strRn = MODEMAP[this.mode].regmap[Rn];
+        debug('Rn means ' + strRn);
+        let strRd = MODEMAP[this.mode].regmap[Rd];
+        debug('Rd means ' + strRd);
     }
 
     AND(i, s, Rn, Rd, op) {
-        debug('AND i='+i+' s='+s+' Rn='+Rn.toString(2)+' Rd='+Rd.toString(2)+' op='+op.toString(2));        
+        debug('AND i='+i+' s='+s+' Rn='+Rn.toString(2)+' Rd='+Rd.toString(2)+' op='+op.toString(2));
+        let strRn = MODEMAP[this.mode].regmap[Rn];
+        debug('Rn means ' + strRn);
+        let strRd = MODEMAP[this.mode].regmap[Rd];
+        debug('Rd means ' + strRd);
     }
 
     DATA(instruction) {
