@@ -235,51 +235,65 @@ class CPU
         return this.cpsr & CPSR.Z;
     }
 
+    _barrelShift_immediate(i, op) {
+        let immed_8 = op & 0x11111111,
+            rotate_imm = (op >> 8),
+            shop = immed_8 >> (2 * rotate_imm), // TODO rotate not shift
+            shco = (0 == rotate_imm) ? this.cpsr & CPSR.C : shop >> 31;
+
+        return {shco, shop};
+    }
+
+    _barrelShift_register_plain(op) {
+        let regid = op & 0b1111,
+            strReg = MODEMAP[this.mode].regmap[regid],
+            shop = this[strReg],
+            shco = this.cpsr & CPSR.C;
+
+        return {shco, shop}; 
+    }
+
+    _barrelShift_register_lsl(op) {
+        let shift_imm = op >> 7,
+            regid = op & 0b1111,
+            strReg = MODEMAP[this.mode].regmap[regid],
+            shop = this[strReg] << shift_imm,
+            shco = (0 == shift_imm) ?
+                this.cpsr & CPSR.C :
+                (this[strReg] >> (32 - shift_imm)) & 1;
+        
+        //let regid = op & 0b1111,
+
+        return {shco, shop};
+    }
+
+    _barrelShift_register_combination(op) {
+        console.log('TODO');
+    }
+
+    _barrelShift_register(op) {
+        return (0 == op >> 4) ?
+            this._barrelShift_register_plain(op) :
+            (
+                (0 == (op >> 4) & 0b1111) ?
+                    this._barrelShift_register_lsl(op) :
+                    this._barrelShift_register_combination(op)
+            );
+    }
+
     barrelShift(i, op) {
-        if (i) {
-            // immediate
-            let immed_8 = op & 0x11111111,
-                rotate_imm = (op >> 8),
-                shop = immed_8 >> (2 * rotate_imm), // TODO rotate not shift
-                shco = 0 == rotate_imm ? this.cpsr & CPSR.C : shop >> 31;
-            }
-        } else {
-            // register
-            if (0 == op >> 4) {
-                //plain
-                let regid = op & 0b1111,
-                    strReg = MODEMAP[this.mode].regmap[regid],
-                    shop = this[strReg],
-                    shco = this.cpsr & CPSR.C;
-            } else if (0 == (op >> 4) & 0b111) {
-                //lsl
-                let shift_imm = op >> 7,
-                    regid = op & 0b1111,
-                    strReg = MODEMAP[this.mode].regmap[regid],
-                    shop = this[strReg] << shift_imm,
-                    shco;
-
-                if (0 == shift_imm) {
-                    shco = this.cpsr & CPSR.C;
-                else {
-                    shco = (this[strReg] >> (32 - shift_imm)) & 1
-                }
-                let regid = op & 0b1111,
-
-            } else {
-                // combination
-            }
-        }
+        let {shco, shop} = (i) ?
+            this._barrelShift_immediate(i, op):
+            this._barrelShift_register(op);
 
         this.cpsr |= shco?CPSR.C:0;
         return shop;
-
     }
 
     EOR(i, s, Rn, Rd, op) {
         debug('EOR i='+i+' s='+s+' Rn='+Rn.toString(2)+' Rd='+Rd.toString(2)+' op='+op.toString(2));
 
-        let op2 = barrelShift(i, op);
+        let op2 = this.barrelShift(i, op);
 
         let strRn = MODEMAP[this.mode].regmap[Rn];
         debug('Rn means ' + strRn);
