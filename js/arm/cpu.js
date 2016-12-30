@@ -190,7 +190,7 @@ class CPU
         let dvInstruction = new DataView(program),
             instruction;
 
-        for (let i = 0; i <= 256; i+= Uint32Array.BYTES_PER_ELEMENT) {
+        for (let i = 0; i <= 256; i++) {
             instruction = dvInstruction.getUint32(i * Uint32Array.BYTES_PER_ELEMENT, true);
 
             debug(instruction.toString(2));
