@@ -10,6 +10,6 @@ fetch('images/intbb/kernel')
     .then((arrayBuffer) => {
         debug('Loaded kernel, starting CPU');
         cpu = new CPU();
-        debug('Started CPU, running kernel')
+        debug('Started CPU, running kernel');
         cpu.runProgram(arrayBuffer);
     }).catch((err) => console.log(err));
