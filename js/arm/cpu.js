@@ -250,7 +250,7 @@ class CPU
             shop = this[strReg],
             shco = this.cpsr & CPSR.C;
 
-        return {shco, shop}; 
+        return {shco, shop};
     }
 
     _barrelShift_register_lsl(op) {
@@ -261,7 +261,7 @@ class CPU
             shco = (0 == shift_imm) ?
                 this.cpsr & CPSR.C :
                 (this[strReg] >> (32 - shift_imm)) & 1;
-        
+
         //let regid = op & 0b1111,
 
         return {shco, shop};

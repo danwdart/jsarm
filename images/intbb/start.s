@@ -1,8 +1,8 @@
 interrupt_vector_table:
     b . @ Reset
-    b . 
+    b .
     b . @ SWI instruction
-    b . 
+    b .
     b .
     b .
     b .
@@ -13,5 +13,5 @@ _start:
     .globl _start
     ldr sp, =stack+0x10000 @ Set up the stack
     bl main @ Jump to the main function
-1: 
+1:
     b 1b @ Halt
